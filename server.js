@@ -99,14 +99,7 @@ app.get('/api/search', async (req, res) => {
 app.get('/api/game/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    let query = {};
-    if (mongoose.Types.ObjectId.isValid(id)) {
-      query = { $or: [{ _id: id }, { id: parseInt(id) }] };
-    } else {
-      query = { id: parseInt(id) };
-    }
-    
-    const game = await Game.findOne(query).lean();
+    const game = await Game.findOne({ id: parseInt(id) }).lean();
 
     if (!game) {
       return res.status(404).json({ error: 'Game not found' });
@@ -210,3 +203,9 @@ app.listen(PORT, () => {
   console.log(`🚀 Server berjalan di mode production: http://localhost:${PORT}`);
 });
 
+// Export untuk Vercel Serverless
+module.exports = app;
+
+
+// Export untuk Vercel Serverless
+module.exports = app;
