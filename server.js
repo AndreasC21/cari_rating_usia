@@ -25,9 +25,21 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('✅ Terhubung ke MongoDB Atlas'))
-  .catch(err => console.error('❌ Gagal konek MongoDB:', err));
+// Middleware Vercel Serverless untuk mencegah Timeout Mongoose!
+app.use(async (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    try {
+      await mongoose.connect(MONGODB_URI, {
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+      });
+      console.log('✅ Re-connected ke MongoDB Atlas');
+    } catch (err) {
+      console.error('❌ Gagal reconek MongoDB:', err);
+    }
+  }
+  next();
+});
 
 // Schema dan Model
 const GameSchema = new mongoose.Schema({ id: { type: Number, unique: true } }, { strict: false, collection: 'games' });
