@@ -34,7 +34,7 @@ const GameSchema = new mongoose.Schema({ id: { type: Number, unique: true } }, {
 const Game = mongoose.model('Game', GameSchema);
 
 // Middleware
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 // Routes
