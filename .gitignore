@@ -6,4 +6,4 @@ yarn-error.log*
 pnpm-debug.log*
 .DS_Store
 konvert.js
-scrap_igrs.js
+scrap.js

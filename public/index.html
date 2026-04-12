@@ -630,7 +630,7 @@
 
                 if (game.ratings && game.ratings.length > 0) {
                     const rating = game.ratings[0];
-                    html += `<p><span class="game-label">Rating</span> Usia ${escapeHtml(rating.name || rating.titleId)}</p>`;
+                    html += `<p><span class="game-label">Rating</span> ${escapeHtml(rating.name || rating.titleId)}</p>`;
                 }
 
                 if (game.description) {
