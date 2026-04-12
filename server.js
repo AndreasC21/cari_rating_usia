@@ -58,22 +58,34 @@ app.get('/', (req, res) => {
 app.get('/api/search', async (req, res) => {
   try {
     const { query } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
     
     if (!query || query.trim() === '') {
-      return res.json([]);
+      return res.json({ games: [], total: 0, pages: 0, currentPage: 1 });
     }
 
-      // Pencarian strict HANYA pada judul (name / title)
-      const results = await Game.find({
+      const searchFilter = {
         $or: [
           { name: { $regex: query, $options: 'i' } },
           { title: { $regex: query, $options: 'i' } }
         ]
-      })
-      .limit(20)
+      };
+
+      const results = await Game.find(searchFilter)
+      .skip(skip)
+      .limit(limit)
       .lean();
 
-      res.json(results);
+      const total = await Game.countDocuments(searchFilter);
+
+      res.json({
+        games: results,
+        total,
+        pages: Math.ceil(total / limit),
+        currentPage: page
+      });
     } catch (error) {
       console.error('Error in search:', error);
       res.status(500).json({ error: 'Search failed' });

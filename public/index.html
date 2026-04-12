@@ -420,7 +420,7 @@
                     <input 
                         type="text" 
                         id="searchInput" 
-                        placeholder="Nama gim, deskripsi, atau penerbit..." 
+                        placeholder="Nama gim..." 
                         onkeyup="handleSearch(event)"
                         onkeypress="if(event.key === 'Enter') performSearch()"
                     >
@@ -488,7 +488,14 @@
                 const session = JSON.parse(searchSession);
                 document.getElementById('searchInput').value = session.query;
                 displayResults(session.results, session.query);
-                document.getElementById('stats').innerHTML = `Ditemukan ${session.results.length} hasil pencarian`;
+                
+                if (session.pages && session.pages > 1) {
+                    displayPaginationSearch(session.currentPage, session.pages);
+                }
+                
+                document.getElementById('stats').innerHTML = session.total !== undefined ?
+                     `Ditemukan ${session.total} hasil pencarian untuk "${session.query}"` : 
+                     `Ditemukan ${session.results.length} hasil pencarian`;
             }
 
             // Add event listener for rating filter
@@ -530,7 +537,7 @@
             // performSearch();
         }
 
-        async function performSearch() {
+        async function performSearch(page = 1) {
             const query = document.getElementById('searchInput').value;
             if (!query.trim()) {
                 document.getElementById('results').innerHTML = '<div class="no-results">Masukkan kata kunci untuk mencari</div>';
@@ -538,17 +545,23 @@
             }
 
             document.getElementById('results').innerHTML = '<div class="loading">⏳ Mencari...</div>';
+            currentPage = page;
 
             try {
-                const response = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
-                const games = await response.json();
+                const response = await fetch(`/api/search?query=${encodeURIComponent(query)}&page=${page}`);
+                const data = await response.json();
 
-                displayResults(games, query);
+                displayResults(data.games, query);
+                displayPaginationSearch(data.currentPage, data.pages);
+                document.getElementById('stats').innerHTML = `Ditemukan ${data.total} hasil pencarian untuk "${query}"`;
                 
                 // Save search session
                 sessionStorage.setItem('searchSession', JSON.stringify({
                     query: query,
-                    results: games
+                    results: data.games,
+                    total: data.total,
+                    currentPage: data.currentPage,
+                    pages: data.pages
                 }));
             } catch (error) {
                 console.error('Error:', error);
@@ -592,14 +605,14 @@
             
             games.forEach(game => {
                 const name = game.name || game.title || 'Tidak ada judul';
-                  const gameId = game.id;
+                const gameId = game.id;
                 
                 // Generate simple image initially, we'll replace it asynchronously via fetchGameCover()
                 const defaultImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1e1e1e&color=ffffff&size=256`;
 
                 html += `
                     <div class="game-card">
-                        <img src="${defaultImage}" alt="${escapeHtml(name)}" class="game-cover" onload="fetchGameCover(this, '${escapeHtml(name).replace(/'/g, "\\'")}')" data-fetched="false">
+                        <img src="${defaultImage}" alt="${escapeHtml(name)}" loading="lazy" class="game-cover" onload="fetchGameCover(this, '${escapeHtml(name).replace(/'/g, "\\'")}')" data-fetched="false">
                         <div class="game-card-content">
                             <h3>${escapeHtml(name)}</h3>
                             <div class="game-id">ID: ${gameId}</div>
@@ -636,10 +649,6 @@
 
             html += '</div>';
             document.getElementById('results').innerHTML = html;
-
-            if (query) {
-                document.getElementById('stats').innerHTML = `Ditemukan ${games.length} hasil pencarian`;
-            }
         }
 
         function displayPagination(currentPage, totalPages) {
@@ -662,6 +671,32 @@
             if (currentPage < totalPages) {
                 html += `<button onclick="loadAllGames(${currentPage + 1})">Selanjutnya ›</button>`;
                 html += `<button onclick="loadAllGames(${totalPages})">Akhir »</button>`;
+            }
+
+            html += '</div>';
+            document.getElementById('results').innerHTML += html;
+        }
+
+        function displayPaginationSearch(currentPage, totalPages) {
+            if (totalPages <= 1) return;
+
+            let html = '<div class="pagination">';
+
+            if (currentPage > 1) {
+                html += `<button onclick="performSearch(1)">« Awal</button>`;
+                html += `<button onclick="performSearch(${currentPage - 1})">‹ Sebelumnya</button>`;
+            }
+
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button ${i === currentPage ? 'class="active"' : ''} onclick="performSearch(${i})">${i}</button>`;
+            }
+
+            if (currentPage < totalPages) {
+                html += `<button onclick="performSearch(${currentPage + 1})">Selanjutnya ›</button>`;
+                html += `<button onclick="performSearch(${totalPages})">Akhir »</button>`;
             }
 
             html += '</div>';
