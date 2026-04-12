@@ -74,6 +74,7 @@ app.get('/api/search', async (req, res) => {
       };
 
       const results = await Game.find(searchFilter)
+      .select('-inGameUrl -videoUrl')
       .skip(skip)
       .limit(limit)
       .lean();
@@ -105,7 +106,7 @@ app.get('/api/search', async (req, res) => {
         query['ratings.name'] = req.query.rating;
       }
       
-      const games = await Game.find(query).skip(skip).limit(limit).lean();
+      const games = await Game.find(query).select('-inGameUrl -videoUrl').skip(skip).limit(limit).lean();
       const total = await Game.countDocuments(query);
       res.json({
         games,
@@ -123,7 +124,7 @@ app.get('/api/search', async (req, res) => {
 app.get('/api/game/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const game = await Game.findOne({ id: parseInt(id) }).lean();
+    const game = await Game.findOne({ id: parseInt(id) }).select('-inGameUrl -videoUrl').lean();
 
     if (!game) {
       return res.status(404).json({ error: 'Game not found' });
@@ -139,7 +140,7 @@ app.get('/api/game/:id', async (req, res) => {
 // DEBUG: API untuk melihat struktur data game
 app.get('/api/debug/first-game', async (req, res) => {
   try {
-    const game = await Game.findOne({}).lean();
+    const game = await Game.findOne({}).select('-inGameUrl -videoUrl').lean();
     if (!game) {
       return res.json({ message: 'No games found' });
     }
