@@ -1,7 +1,4 @@
 ﻿require('dotenv').config();
-const dns = require('dns');
-dns.setDefaultResultOrder('ipv4first');
-
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
@@ -54,46 +51,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// API untuk search games
-app.get('/api/search', async (req, res) => {
-  try {
-    const { query } = req.query;
-    const page = parseInt(req.query.page) || 1;
-    const limit = 10;
-    const skip = (page - 1) * limit;
-    
-    if (!query || query.trim() === '') {
-      return res.json({ games: [], total: 0, pages: 0, currentPage: 1 });
-    }
-
-      const searchFilter = {
-        $or: [
-          { name: { $regex: query, $options: 'i' } },
-          { title: { $regex: query, $options: 'i' } }
-        ]
-      };
-
-      const results = await Game.find(searchFilter)
-      .select('-inGameUrl -videoUrl')
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-      const total = await Game.countDocuments(searchFilter);
-
-      res.json({
-        games: results,
-        total,
-        pages: Math.ceil(total / limit),
-        currentPage: page
-      });
-    } catch (error) {
-      console.error('Error in search:', error);
-      res.status(500).json({ error: 'Search failed' });
-    }
-  });
-      
-  // API untuk get semua games dengan pagination
+// API untuk get semua games dengan pagination (gabungan pencarian & filter)
   app.get('/api/games', async (req, res) => {
     try {
       const page = parseInt(req.query.page) || 1;
@@ -101,6 +59,14 @@ app.get('/api/search', async (req, res) => {
       const skip = (page - 1) * limit;
       
       let query = {};
+      
+      if (req.query.query && req.query.query.trim() !== '') {
+        query.$or = [
+          { name: { $regex: req.query.query, $options: 'i' } },
+          { title: { $regex: req.query.query, $options: 'i' } }
+        ];
+      }
+
       if (req.query.rating) {
         // Karena rating berbentuk array of objects, kita cek 'ratings.name'
         query['ratings.name'] = req.query.rating;
@@ -141,19 +107,6 @@ app.get('/api/game/:id', async (req, res) => {
   } catch (error) {
     console.error('Error fetching game:', error);
     res.status(500).json({ error: 'Fetch failed' });
-  }
-});
-
-// DEBUG: API untuk melihat struktur data game
-app.get('/api/debug/first-game', async (req, res) => {
-  try {
-    const game = await Game.findOne({}).select('-inGameUrl -videoUrl').lean();
-    if (!game) {
-      return res.json({ message: 'No games found' });
-    }
-    res.json(game);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
   }
 });
 
@@ -234,10 +187,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server berjalan di mode production: http://localhost:${PORT}`);
 });
-
-// Export untuk Vercel Serverless
-module.exports = app;
-
 
 // Export untuk Vercel Serverless
 module.exports = app;
