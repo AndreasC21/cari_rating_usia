@@ -138,7 +138,7 @@
             text-align: center;
         }
 
-        #ratingFilter {
+        #ratingFilter, #sortFilter {
             background: #121212;
             color: #FFFFFF;
             border: 1px solid #444444;
@@ -150,7 +150,7 @@
             transition: border-color 0.2s;
         }
 
-        #ratingFilter:focus {
+        #ratingFilter:focus, #sortFilter:focus {
             border-color: #666666;
         }
 
@@ -406,13 +406,13 @@
     <div class="container">
         <header>
             <h1>Cari Gim Rating IGRS</h1>
-            <p>Fanmade website untuk mencari gim berdasarkan rating usia gim yang telah terdaftar IGRS</p>
+            <p>Situs web fanmade untuk mencari rating usia gim yang telah terdaftar di IGRS</p>
         </header>
 
         <div class="search-container">
             <div class="toggle-buttons">
-                <button class="toggle-btn active" onclick="setMode('search')">Mode Pencarian</button>
-                <button class="toggle-btn" onclick="setMode('browse')">Jelajahi Semua</button>
+                <button class="toggle-btn active" onclick="setMode('search')">Pencarian</button>
+                <button class="toggle-btn" onclick="setMode('browse')">Semua Gim</button>
             </div>
 
             <div id="searchMode">
@@ -429,17 +429,26 @@
             </div>
 
             <div id="browseMode" style="display: none;">
-                <div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 12px;">
-                    <label style="color: #A1A1AA; font-weight: 500;">Filter berdasarkan Rating Usia:</label>
-                    <select id="ratingFilter">
-                        <option value="">Semua Rating</option>
-                        <option value="RC">Konten Terlarang (RC)</option>
-                        <option value="3+">Usia 3+</option>
-                        <option value="7+">Usia 7+</option>
-                        <option value="13+">Usia 13+</option>
-                        <option value="15+">Usia 15+</option>
-                        <option value="18+">Usia 18+</option>
-                    </select>
+                <div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <label style="color: #A1A1AA; font-weight: 500;">Rating Usia:</label>
+                        <select id="ratingFilter">
+                            <option value="">Semua Rating</option>
+                            <option value="RC">Konten Terlarang (RC)</option>
+                            <option value="3+">Usia 3+</option>
+                            <option value="7+">Usia 7+</option>
+                            <option value="13+">Usia 13+</option>
+                            <option value="15+">Usia 15+</option>
+                            <option value="18+">Usia 18+</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <label style="color: #A1A1AA; font-weight: 500;">Urutkan:</label>
+                        <select id="sortFilter">
+                            <option value="newest">Terbaru</option>
+                            <option value="oldest">Terlama</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -451,7 +460,7 @@
         </div>
           
           <div style="text-align: center; margin-top: 50px; margin-bottom: 20px; font-size: 0.85em; color: #666666;">
-              Data diupdate terakhir tanggal 12 April 2026
+              Data diupdate terakhir tanggal 13 April 2026
           </div>
       </div>
 
@@ -498,10 +507,17 @@
                      `Ditemukan ${session.results.length} hasil pencarian`;
             }
 
-            // Add event listener for rating filter
+            // Add event listener for rating and sort filters
             const ratingFilter = document.getElementById('ratingFilter');
             if (ratingFilter) {
                 ratingFilter.addEventListener('change', function() {
+                    loadAllGames(1);
+                });
+            }
+            
+            const sortFilter = document.getElementById('sortFilter');
+            if (sortFilter) {
+                sortFilter.addEventListener('change', function() {
                     loadAllGames(1);
                 });
             }
@@ -574,12 +590,16 @@
             currentPage = page;
             
             const ratingFilter = document.getElementById('ratingFilter').value;
+            const sortFilter = document.getElementById('sortFilter').value;
             currentRatingFilter = ratingFilter;
 
             try {
                 let url = `/api/games?page=${page}`;
                 if (ratingFilter) {
                     url += `&rating=${encodeURIComponent(ratingFilter)}`;
+                }
+                if (sortFilter) {
+                    url += `&sort=${encodeURIComponent(sortFilter)}`;
                 }
                 
                 const response = await fetch(url);

@@ -105,8 +105,15 @@ app.get('/api/search', async (req, res) => {
         // Karena rating berbentuk array of objects, kita cek 'ratings.name'
         query['ratings.name'] = req.query.rating;
       }
+
+      let sortObj = {};
+      if (req.query.sort === 'oldest') {
+        sortObj.id = 1;
+      } else {
+        sortObj.id = -1; // Default to newest
+      }
       
-      const games = await Game.find(query).select('-inGameUrl -videoUrl').skip(skip).limit(limit).lean();
+      const games = await Game.find(query).sort(sortObj).select('-inGameUrl -videoUrl').skip(skip).limit(limit).lean();
       const total = await Game.countDocuments(query);
       res.json({
         games,
