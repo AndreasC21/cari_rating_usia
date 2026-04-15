@@ -1,5 +1,7 @@
 let currentPage = 1;
 let totalPages = 1;
+let searchTimeout = null;
+
 // Cache DOM elements
 const searchInput = document.getElementById('searchInput');
 const ratingFilter = document.getElementById('ratingFilter');
