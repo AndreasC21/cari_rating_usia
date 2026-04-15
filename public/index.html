@@ -9,19 +9,42 @@
 <body>
     <div class="container">
         <div class="search-container" style="margin-top: 20px;">
-            <div class="search-box">
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    placeholder="Cari nama gim..." 
-                    oninput="debounceSearch()"
-                >
+            <div class="search-filter-bar">
+                <div class="search-box">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Cari nama gim..." 
+                        oninput="debounceSearch()"
+                    >
+                </div>
+                <button id="filterBtn" class="filter-btn" onclick="toggleFilterModal()">
+                    <span>⚙️ Filter</span>
+                </button>
             </div>
 
-            <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <label style="color: #A1A1AA; font-weight: 500;">Rating Usia:</label>
-                    <select id="ratingFilter" onchange="loadAllGames()">
+            <div class="stats" id="stats" style="margin-top: 8px;"></div>
+            <div style="text-align: center; margin-top: 2px; font-size: 0.8em; color: #888888;">
+                <span id="lastUpdated">Terakhir diupdate: -</span>
+            </div>
+        </div>
+
+        <div class="results-container">
+            <div id="results"></div>
+        </div>
+      </div>
+
+    <!-- Filter Modal -->
+    <div id="filterModal" class="modal-overlay filter-modal" onclick="closeFilterOnBackdrop(event)">
+        <div class="filter-modal-content">
+            <div class="filter-modal-header">
+                <h3>Opsi Filter</h3>
+                <button class="close-btn" onclick="toggleFilterModal()">×</button>
+            </div>
+            <div class="filter-modal-body">
+                <div class="filter-group">
+                    <label for="ratingFilter">Rating Usia:</label>
+                    <select id="ratingFilter" onchange="handleFilterChange()">
                         <option value="">Semua Rating</option>
                         <option value="RC">Konten Terlarang (RC)</option>
                         <option value="3+">Usia 3+</option>
@@ -31,26 +54,16 @@
                         <option value="18+">Usia 18+</option>
                     </select>
                 </div>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <label style="color: #A1A1AA; font-weight: 500;">Urutkan:</label>
-                    <select id="sortFilter" onchange="loadAllGames()">
+                <div class="filter-group">
+                    <label for="sortFilter">Urutkan:</label>
+                    <select id="sortFilter" onchange="handleFilterChange()">
                         <option value="newest">Terbaru</option>
                         <option value="oldest">Terlama</option>
                     </select>
                 </div>
             </div>
-
-            <div class="stats" id="stats"></div>
         </div>
-
-        <div class="results-container">
-            <div id="results"></div>
-        </div>
-          
-          <div style="text-align: center; margin-top: 50px; margin-bottom: 20px; font-size: 0.85em; color: #666666;">
-              Data diupdate terakhir tanggal 14 April 2026
-          </div>
-      </div>
+    </div>
 
     <!-- Disclaimer Modal -->
     <div id="disclaimerModal" class="modal-overlay">

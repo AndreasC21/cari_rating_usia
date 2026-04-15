@@ -5,21 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Detail - Database IGRS</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-primary: #2A2C31;
+            --bg-secondary: #242527;
+            --text-primary: #F0F4F8;
+            --text-secondary: #B8C1CC;
+            --text-muted: #959BA8;
+            --border-color: #3D4149;
+            --accent-light: #FFFFFF;
+        }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
         }
 
         body {
-            background-color: #242526; /* Lebihan terang dari hitam, tapi tetap dark mode */
-            color: #E2E8F0;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
             line-height: 1.6;
-            overflow-x: hidden; /* Mencegah geser horizontal layar HP bocor */
+            overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle-container {
+            display: none;
         }
 
         /* BANNER ATAS */
@@ -58,8 +74,8 @@
             height: 140px;
             border-radius: 16px;
             object-fit: cover;
-            background: #1A1A1A;
-            border: 2px solid #333333;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             display: none; /* di hidden sebelum load */
             flex-shrink: 0;
@@ -74,7 +90,7 @@
             gap: 8px;
             padding: 8px 16px;
             background: transparent;
-            color: #A1A1AA;
+            color: var(--text-secondary);
             text-transform: uppercase;
             text-decoration: none;
             border-radius: 4px;
@@ -86,20 +102,20 @@
         }
 
         .back-btn:hover {
-            color: #FFFFFF;
+            color: var(--text-primary);
             background: rgba(255,255,255,0.05);
         }
 
         /* Black belt (for platforms/stores links) */
         .store-belt {
-            background-color: #1A1A1A;
+            background-color: var(--bg-secondary);
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 15px 20px;
             gap: 40px;
-            border-top: 1px solid #333333;
-            border-bottom: 1px solid #333333;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
             flex-wrap: wrap;
             margin-bottom: 20px;
         }
@@ -204,13 +220,13 @@
             max-width: 320px;
             object-fit: cover;
             border-radius: 8px;
-            border: 1px solid #333333;
+            border: 1px solid var(--border-color);
             transition: transform 0.2s;
         }
 
         .screenshot-img:hover {
             transform: scale(1.02);
-            border-color: #555555;
+            border-color: var(--text-secondary);
             cursor: pointer;
         }
 
@@ -278,7 +294,7 @@
         /* Thin dividers between info */
         .info-divider {
             height: 1px;
-            background-color: #333333;
+            background-color: var(--border-color);
             margin: 12px 0;
             width: 100%;
         }
@@ -292,9 +308,9 @@
 
         .platform-badge {
             padding: 6px 14px;
-            background: #1A1A1A;
-            border: 1px solid #333333;
-            color: #A1A1AA;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
             border-radius: 99px;
             font-weight: 500;
             font-size: 0.85em;
@@ -310,12 +326,12 @@
 
         .info-label {
             font-weight: 500;
-            color: #666666;
+            color: var(--text-muted);
             font-size: 0.95em;
         }
 
         .info-value {
-            color: #FFFFFF;
+            color: var(--text-primary);
             font-size: 0.95em;
             font-weight: 500;
             text-align: right;
@@ -324,8 +340,8 @@
 
         .igrs-link-button {
             display: inline-block;
-            background-color: #FFFFFF;
-            color: #000000;
+            background-color: var(--accent-light);
+            color: var(--bg-primary);
             padding: 10px 24px;
             font-weight: 600;
             text-transform: none;
@@ -396,7 +412,7 @@
             gap: 16px;
             margin-top: 32px;
             padding-top: 24px;
-            border-top: 2px dashed #333333;
+            border-top: 2px dashed var(--border-color);
         }
 
         .rating-reason-card {
@@ -416,18 +432,18 @@
             left: 0;
             width: 4px;
             height: 100%;
-            background: #666;
+            background: var(--text-secondary);
             transition: width 0.3s;
         }
 
         .rating-reason-card:hover {
             transform: translateX(4px);
-            border-color: #555;
+            border-color: var(--text-secondary);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
         .rating-reason-card:hover::before {
-            background: #fff;
+            background: var(--accent-light);
         }
 
         .rating-reason-header {
@@ -468,11 +484,28 @@
         <div class="loading">&#8987; Memuat detail game...</div>
     </div>
     
-    <div style="text-align: center; margin-top: 50px; margin-bottom: 20px; font-size: 0.85em; color: #666666;">
-        Data diupdate terakhir tanggal 14 April 2026
+    <div style="text-align: center; margin-top: 50px; margin-bottom: 20px; font-size: 0.85em; color: var(--text-muted);">
+        <span id="lastUpdated">Terakhir diupdate: -</span>
     </div>
 
     <script>
+        // Fetch last updated timestamp
+        async function loadLastUpdatedTimestamp() {
+            try {
+                const response = await fetch('/api/last-updated');
+                const data = await response.json();
+                
+                if (data.timestamp) {
+                    const lastUpdatedElement = document.getElementById('lastUpdated');
+                    if (lastUpdatedElement) {
+                        lastUpdatedElement.textContent = `Terakhir diupdate: ${data.timestamp}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching last updated:', error);
+            }
+        }
+
         async function loadGameDetail() {
             try {
                 // Get game ID dari URL
@@ -868,7 +901,10 @@
         }
 
         // Load game detail saat page selesai
-        window.addEventListener('DOMContentLoaded', loadGameDetail);
+        window.addEventListener('DOMContentLoaded', () => {
+            loadGameDetail();
+            loadLastUpdatedTimestamp();
+        });
     </script>
 </body>
 </html>

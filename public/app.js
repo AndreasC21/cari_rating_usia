@@ -1,6 +1,11 @@
 let currentPage = 1;
 let totalPages = 1;
-let searchTimeout = null;
+// Cache DOM elements
+const searchInput = document.getElementById('searchInput');
+const ratingFilter = document.getElementById('ratingFilter');
+const sortFilter = document.getElementById('sortFilter');
+const resultsDiv = document.getElementById('results');
+const statsDiv = document.getElementById('stats');
 
 function debounceSearch() {
     clearTimeout(searchTimeout);
@@ -9,8 +14,54 @@ function debounceSearch() {
     }, 400);
 }
 
+// Filter Modal Functions
+function toggleFilterModal() {
+    const modal = document.getElementById('filterModal');
+    modal.classList.toggle('active');
+    
+    if (modal.classList.contains('active')) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
+}
+
+function closeFilterOnBackdrop(event) {
+    const modal = document.getElementById('filterModal');
+    if (event.target === modal) {
+        toggleFilterModal();
+    }
+}
+
+function handleFilterChange() {
+    // Close the modal and load games after small delay for smooth transition
+    setTimeout(() => {
+        toggleFilterModal();
+        loadAllGames(1);
+    }, 100);
+}
+
+// Fetch last updated timestamp from database
+async function loadLastUpdatedTimestamp() {
+    try {
+        const response = await fetch('/api/last-updated');
+        const data = await response.json();
+        
+        if (data.timestamp) {
+            const lastUpdatedElement = document.getElementById('lastUpdated');
+            if (lastUpdatedElement) {
+                lastUpdatedElement.textContent = `Data diupdate terakhir tanggal ${data.timestamp}`;
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching last updated:', error);
+    }
+}
+
 // Restore search session on page load
 window.addEventListener('load', function() {
+    loadLastUpdatedTimestamp();
+    
     const searchSession = sessionStorage.getItem('searchSession');
     if (searchSession) {
         const session = JSON.parse(searchSession);
@@ -25,46 +76,37 @@ window.addEventListener('load', function() {
 });
 
 async function loadAllGames(page = 1) {
-    document.getElementById('results').innerHTML = '<div class="loading">⏳ Memuat games...</div>';
+    if(!resultsDiv) return;
+    resultsDiv.innerHTML = '<div class="loading">⏳ Memuat games...</div>';
     currentPage = page;
     
-    const query = document.getElementById('searchInput').value;
-    const ratingFilter = document.getElementById('ratingFilter').value;
-    const sortFilter = document.getElementById('sortFilter').value;
+    const query = searchInput ? searchInput.value : '';
+    const rating = ratingFilter ? ratingFilter.value : '';
+    const sort = sortFilter ? sortFilter.value : '';
 
     try {
-        let url = `/api/games?page=${page}`;
-        if (query.trim()) {
-            url += `&query=${encodeURIComponent(query)}`;
-        }
-        if (ratingFilter) {
-            url += `&rating=${encodeURIComponent(ratingFilter)}`;
-        }
-        if (sortFilter) {
-            url += `&sort=${encodeURIComponent(sortFilter)}`;
-        }
+        const queryParams = new URLSearchParams({ page });
+        if (query.trim()) queryParams.append('query', query.trim());
+        if (rating) queryParams.append('rating', rating);
+        if (sort) queryParams.append('sort', sort);
         
-        const response = await fetch(url);
+        const response = await fetch(`/api/games?${queryParams}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
 
         displayResults(data.games, query);
         displayPagination(data.currentPage, data.pages);
         
         let statsMsg = `Total: ${data.total} games`;
-        if (query.trim()) statsMsg += ` untuk pencarian "${query}"`;
-        if (ratingFilter) statsMsg += ` (Rating: ${ratingFilter})`;
-        document.getElementById('stats').innerHTML = statsMsg;
+        if (query.trim()) statsMsg += ` untuk pencarian "${escapeHtml(query)}"`;
+        if (rating) statsMsg += ` (Rating: ${escapeHtml(rating)})`;
+        if(statsDiv) statsDiv.innerHTML = statsMsg;
 
-        // Save search session
-        sessionStorage.setItem('searchSession', JSON.stringify({
-            query: query,
-            rating: ratingFilter,
-            sort: sortFilter,
-            currentPage: data.currentPage
-        }));
+        // Save search session using fast local logic
+        sessionStorage.setItem('searchSession', JSON.stringify({ query, rating, sort, currentPage: data.currentPage }));
     } catch (error) {
         console.error('Error:', error);
-        document.getElementById('results').innerHTML = '<div class="no-results">❌ Terjadi kesalahan saat memuat games</div>';
+        resultsDiv.innerHTML = '<div class="no-results">❌ Terjadi kesalahan saat memuat games</div>';
     }
 }
 

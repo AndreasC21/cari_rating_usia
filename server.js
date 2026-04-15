@@ -13,7 +13,7 @@ app.use(helmet({
   contentSecurityPolicy: false // Nonaktifkan CSP supaya gambar eksternal (steam/itunes/igrs) tetap muncul
 }));
 app.use(cors());
-app.use(compression()); // Compress responses
+app.use(compression({ level: 5 })); // Compress responses optimally
 
 // Koneksi MongoDB
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -52,7 +52,7 @@ app.get('/', (req, res) => {
 });
 
 // API untuk get semua games dengan pagination (gabungan pencarian & filter)
-  app.get('/api/games', async (req, res) => {
+app.get('/api/games', async (req, res) => {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = 20;
@@ -61,26 +61,26 @@ app.get('/', (req, res) => {
       let query = {};
       
       if (req.query.query && req.query.query.trim() !== '') {
+        const regexStr = req.query.query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex
+        const regex = new RegExp(regexStr, 'i');
         query.$or = [
-          { name: { $regex: req.query.query, $options: 'i' } },
-          { title: { $regex: req.query.query, $options: 'i' } }
+          { name: regex },
+          { title: regex }
         ];
       }
 
       if (req.query.rating) {
-        // Karena rating berbentuk array of objects, kita cek 'ratings.name'
         query['ratings.name'] = req.query.rating;
       }
 
-      let sortObj = {};
-      if (req.query.sort === 'oldest') {
-        sortObj.id = 1;
-      } else {
-        sortObj.id = -1; // Default to newest
-      }
+      let sortObj = { id: req.query.sort === 'oldest' ? 1 : -1 };
       
-      const games = await Game.find(query).sort(sortObj).select('-inGameUrl -videoUrl').skip(skip).limit(limit).lean();
-      const total = await Game.countDocuments(query);
+      // Parallelize queries
+      const [games, total] = await Promise.all([
+        Game.find(query).sort(sortObj).select('name title publisherName ratings platformsName releaseYear releasedAt createdAt updatedAt id').skip(skip).limit(limit).lean(),
+        Game.countDocuments(query)
+      ]);
+      
       res.json({
         games,
         total,
@@ -93,11 +93,13 @@ app.get('/', (req, res) => {
   }
 });
 
+const GAME_PROJECTION = '-inGameUrl -videoUrl -__v'; // exclude heavy unneeded fields
+
 // API untuk get single game by ID
 app.get('/api/game/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const game = await Game.findOne({ id: parseInt(id) }).select('-inGameUrl -videoUrl').lean();
+    const game = await Game.findOne({ id: parseInt(id) }).select(GAME_PROJECTION).lean();
 
     if (!game) {
       return res.status(404).json({ error: 'Game not found' });
@@ -106,6 +108,22 @@ app.get('/api/game/:id', async (req, res) => {
     res.json(game);
   } catch (error) {
     console.error('Error fetching game:', error);
+    res.status(500).json({ error: 'Fetch failed' });
+  }
+});
+
+// API untuk get last updated timestamp
+app.get('/api/last-updated', async (req, res) => {
+  try {
+    const metadata = await Game.collection.findOne({ _id: 'system:lastUpdated' });
+    
+    if (metadata && metadata.timestamp) {
+      res.json({ timestamp: metadata.timestamp });
+    } else {
+      res.json({ timestamp: 'Data tidak tersedia' });
+    }
+  } catch (error) {
+    console.error('Error fetching last updated:', error);
     res.status(500).json({ error: 'Fetch failed' });
   }
 });
